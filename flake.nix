@@ -1,26 +1,40 @@
 {
-  inputs.dream2nix.url = "github:nix-community/dream2nix";
-  inputs.src = {
-    type = "gitlab";
-    owner = "Openki";
-    repo = "Openki";
-    ref = "dev";
-    flake = false;
+  inputs = {
+    nixpkgs.url = "nixpkgs/nixos-unstable";
+    dream2nix.url = "github:nix-community/dream2nix";
+    nixos-shell.url = "github:mic92/nixos-shell";
+
+    src = {
+      type = "gitlab";
+      owner = "Openki";
+      repo = "Openki";
+      ref = "v0.9.0";
+      flake = false;
+    };
   };
 
   outputs =
     { self
+    , nixpkgs
     , dream2nix
+    , nixos-shell
     , src
     }:
     let
-      systems = [ "x86_64-linux" ];
-      pkgs = dream2nix.inputs.nixpkgs.legacyPackages.x86_64-linux;
+      lib = nixpkgs.lib;
 
-      d2n-flake =
-        dream2nix.lib.makeFlakeOutputs
-          {
-            inherit systems;
+      supportedSystems = [
+        "x86_64-linux"
+      ];
+
+      forAllSystems = f: lib.genAttrs supportedSystems (system: f system);
+
+      nixpkgsFor = lib.genAttrs supportedSystems (system: nixpkgs.legacyPackages."${system}");
+
+      d2n-flake = forAllSystems
+        (system: {
+          d2n = dream2nix.lib.makeFlakeOutputs {
+            inherit system;
             config.projectRoot = ./.;
             source = "${src}";
             packageOverrides = {
@@ -33,74 +47,58 @@
               };
             };
           };
-
-      overrideDevShells = {
-        devShells =
-          d2n-flake.devShells
-          // {
-            x86_64-linux =
-              d2n-flake.devShells.x86_64-linux
-              // {
-                default =
-                  d2n-flake.devShells.x86_64-linux.default.overrideAttrs
-                    (old: with pkgs; {
-                      nativeBuildInputs =
-                        old.nativeBuildInputs ++ [
-                          meteor
-                        ];
-
-                      shellHook = old.shellHook + ''
-                        export LD_LIBRARY_PATH=${pkgs.curl.out}/lib:${pkgs.lzma.out}/lib
-                      '';
-                    });
-              };
-          };
-      };
-
-      nixosModule = {
-        nixosModules.openki = { config, lib, pkgs }:
-          with lib;
-          let
-            cfg = config.services.openki;
-            user = "openki";
-            group = "openki";
-            statePath = cfg.statePath;
-          in
-          {
-            options.services.openki = {
-              enable = mkEnableOption "Enable Openki server";
-              config = mkOption {
-                default = "";
-                description = "Openki configuration";
-              };
-            };
-
-            config = mkIf cfg.enable {
-              services.mongodb = {
-                enable = mkDefault true;
-
-                bind_ip = "0.0.0.0";
-                package = pkgs.mongodb;
-                extraConfig = ''
-                  net:
-                    port: 1234
-                '';
-              };
-
-              systemd.services.openki = {
-                wantedBy = [ "multi-user.target" ];
-                after = [ "mongodb.service" "network.target" ];
-                wants = [ "mongodb.service" ];
-                description = "Start the Openki server.";
-                serviceConfig = {
-                  ExecStart = "MONGO_URL=" mongodb://0.0.0.0:1234/meteor " ${pkgs.meteor}/bin/meteor npm run dev";
-                  User = user;
-                  Group = group;
-                };
-              };
-            };
-          };
-      };
+        });
     in
-    d2n-flake // overrideDevShells // nixosModule;
+    d2n-flake //
+    {
+      nixosModules.openki = import ./module.nix;
+
+      devShell = forAllSystems (system:
+        nixpkgsFor."${system}".mkShell {
+          buildInputs = [
+            nixos-shell.defaultPackage."${system}"
+          ];
+        }
+      );
+
+      packages = forAllSystems (system: {
+        nixos-vm =
+          let
+            nixos = lib.nixosSystem {
+              inherit system;
+              modules = [
+                self.nixosModules.openki
+              ];
+            };
+          in
+          nixos.config.system.build.vm;
+      });
+
+      apps = forAllSystems (system: {
+
+        vm = {
+          type = "app";
+          program = builtins.toString (nixpkgs.legacyPackages."${system}".writeScript "vm" ''
+            ${self.packages."${system}".nixos-vm}/bin/run-nixos-vm
+          '');
+        };
+
+        vm-clear-state = {
+          type = "app";
+          program = builtins.toString (nixpkgs.legacyPackages."${system}".writeScript "vm-clear-state" ''
+            rm nixos.qcow2
+          '');
+        };
+
+        nixos-shell = {
+          type = "app";
+          program = builtins.toString (nixpkgs.legacyPackages."${system}".writeScript "nixos-shell" ''
+            ${nixos-shell.defaultPackage."${system}"}/bin/nixos-shell \
+              -I nixpkgs=${nixpkgs} \
+              ./module.nix
+          '');
+        };
+
+      });
+    };
 }

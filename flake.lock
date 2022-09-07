@@ -166,6 +166,24 @@
         "type": "indirect"
       }
     },
+    "nixos-shell": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1646257415,
+        "narHash": "sha256-whHBBcthLhEIy2VTaioRZOSZoZR7pk4Qr4DVxwU0r9Y=",
+        "owner": "mic92",
+        "repo": "nixos-shell",
+        "rev": "55de7d4d449ff30cdde8b8fe484a86eef477245e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mic92",
+        "repo": "nixos-shell",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1657638268,
@@ -173,6 +191,36 @@
         "owner": "NixOS",
         "repo": "nixpkgs",
         "rev": "d80993b5f885515254746ba6d1917276ee386149",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-unstable",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1628465643,
+        "narHash": "sha256-QSNw9bDq9uGUniQQtakRuw4m21Jxugm23SXLVgEV4DM=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6ef4f522d63f22b40004319778761040d3197390",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "ref": "nixos-unstable",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1661361016,
+        "narHash": "sha256-Bjf6ZDnDc6glTwIIItvwfcaeJ5zWFM6GYfPajSArdUY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "b784c5ae63dd288375af1b4d37b8a27dd8061887",
         "type": "github"
       },
       "original": {
@@ -226,6 +274,8 @@
     "root": {
       "inputs": {
         "dream2nix": "dream2nix",
+        "nixos-shell": "nixos-shell",
+        "nixpkgs": "nixpkgs_3",
         "src": "src"
       }
     },
@@ -249,16 +299,16 @@
     "src": {
       "flake": false,
       "locked": {
-        "lastModified": 1661525205,
-        "narHash": "sha256-9yWzmCNM9oxE7ND53W+cSGtwgn+BklZECt2NPCjzOno=",
+        "lastModified": 1599491298,
+        "narHash": "sha256-o+vZMpp/NeOurrD3ZN/BfhW9ElyK2C1qTtm2fH/b85Q=",
         "owner": "Openki",
         "repo": "Openki",
-        "rev": "c15f0a6e86f4ad552dc160125a94c077c879d852",
+        "rev": "477c877b199bb0108679437f338c4f4c1dba5af1",
         "type": "gitlab"
       },
       "original": {
         "owner": "Openki",
-        "ref": "dev",
+        "ref": "v0.9.0",
         "repo": "Openki",
         "type": "gitlab"
       }
