@@ -14,24 +14,7 @@ in
     };
   };
 
-  config = {
-    users.groups = {
-      openki = {
-        members = [ "openki" ];
-      };
-    };
-
-    users.users = {
-      root.password = "root";
-
-      openki = {
-        isNormalUser = true;
-        home = "/home/openki";
-        group = "openki";
-        password = "openki";
-      };
-    };
-
+  config = lib.mkIf cfg.enable {
     services.mongodb = {
       enable = lib.mkDefault true;
 
