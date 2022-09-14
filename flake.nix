@@ -21,15 +21,9 @@
     , src
     }:
     let
-      lib = nixpkgs.lib;
-
-      supportedSystems = [
-        "x86_64-linux"
-      ];
-
-      forAllSystems = f: lib.genAttrs supportedSystems (system: f system);
-
-      nixpkgsFor = lib.genAttrs supportedSystems (system: nixpkgs.legacyPackages."${system}");
+      supportedSystems = [ "x86_64-linux" ];
+      forAllSystems = f: nixpkgs.lib.genAttrs supportedSystems (system: f system);
+      nixpkgsFor = forAllSystems (system: import nixpkgs { inherit system; });
 
       d2n-flake = forAllSystems
         (system: {
@@ -61,18 +55,19 @@
         }
       );
 
-      packages = forAllSystems (system: {
-        nixos-vm =
-          let
-            nixos = lib.nixosSystem {
-              inherit system;
-              modules = [
-                self.nixosModules.openki
-              ];
-            };
-          in
-          nixos.config.system.build.vm;
-      });
+      packages = forAllSystems (system:
+        {
+          nixos-vm =
+            let
+              nixos = nixpkgs.lib.nixosSystem {
+                inherit system;
+                modules = [
+                  self.nixosModules.openki
+                ];
+              };
+            in
+            nixos.config.system.build.vm;
+        });
 
       apps = forAllSystems (system: {
 
